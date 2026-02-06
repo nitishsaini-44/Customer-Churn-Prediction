@@ -115,13 +115,13 @@ The application will open in your browser at `http://localhost:8501`
 | Package | Version | Purpose |
 |---------|---------|---------|
 | streamlit | 1.28.1 | Web application framework |
-| tensorflow | 2.15.0 | Deep learning framework |
-| keras | 2.15.0 | Neural network API |
-| pandas | 2.1.3 | Data manipulation |
-| numpy | 1.24.3 | Numerical computing |
-| scikit-learn | 1.3.2 | Preprocessing and utilities |
-| tensorboard | 2.15.0 | Training visualization |
-| matplotlib | 3.8.2 | Data visualization |
+| tensorflow | 2.20.0 | Deep learning framework |
+| keras | 3.0.5 | Neural network API |
+| pandas | 2.2.2 | Data manipulation |
+| numpy | 1.26.4 | Numerical computing |
+| scikit-learn | 1.4.2 | Preprocessing and utilities |
+| tensorboard | 2.20.0 | Training visualization |
+| matplotlib | 3.8.4 | Data visualization |
 | scikeras | 0.13.0 | Scikit-learn wrapper for Keras |
 
 ## 🔧 Model Training
