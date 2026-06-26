@@ -2,7 +2,7 @@
 
 An Artificial Neural Network (ANN) based web application to predict whether a customer is likely to churn or continue their relationship with a company.
 
-## 📋 Project Overview
+## 📋 Project Overview 
 
 This project builds and deploys a machine learning model that predicts customer churn using an ANN built with TensorFlow/Keras. The application is built using a modern **microservices architecture**:
 1. **Backend**: A high-performance REST API built with **FastAPI** that handles the heavy lifting of model inference and data preprocessing.
