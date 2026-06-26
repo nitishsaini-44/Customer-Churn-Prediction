@@ -1,0 +1,12 @@
+tensorflow
+keras
+tensorboard
+pandas
+numpy
+scikit-learn
+matplotlib
+scikeras
+fastapi
+uvicorn
+pydantic
+requests
