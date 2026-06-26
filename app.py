@@ -1,33 +1,14 @@
 import streamlit as st
-import tensorflow as tf
-from tensorflow.keras.models import load_model
-import pandas as pd
-import numpy as np
-import pickle
+import requests
 import os
 
 # Set page config
 st.set_page_config(page_title="Customer Churn Prediction", layout="wide")
 st.title("🔮 Customer Churn Prediction")
-st.markdown("Predict whether a customer is likely to churn or not")
+st.markdown("Predict whether a customer is likely to churn or not using our FastAPI backend")
 
-# Load model and preprocessors
-@st.cache_resource
-def load_models():
-    model = load_model('model.h5')
-    with open('labelEncoder_gender.pkl', 'rb') as file:
-        labelEncoder_gender = pickle.load(file)
-    with open('oneHotencoder_geo.pkl', 'rb') as file:
-        oneHotencoder_geo = pickle.load(file)
-    with open('scaler.pkl', 'rb') as file:
-        scaler = pickle.load(file)
-    return model, labelEncoder_gender, oneHotencoder_geo, scaler
-
-try:
-    model, labelEncoder_gender, oneHotencoder_geo, scaler = load_models()
-except FileNotFoundError as e:
-    st.error(f"Error loading model files: {e}")
-    st.stop()
+# FastAPI endpoint URL (Defaults to localhost for local testing)
+API_URL = os.environ.get("BACKEND_URL", "http://127.0.0.1:8000/predict")
 
 # Create input form
 st.header("Customer Information")
@@ -54,66 +35,60 @@ estimated_salary = st.number_input("Estimated Salary", min_value=0.0, value=5000
 # Prediction button
 if st.button("Predict Churn", type="primary", width='stretch'):
     
-    # Prepare input data
+    # Prepare input data matching the FastAPI CustomerInfo schema
     input_data = {
-        'CreditScore': credit_score,
+        'CreditScore': int(credit_score),
         'Geography': geography,
         'Gender': gender,
-        'Age': age,
-        'Tenure': tenure,
-        'Balance': balance,
-        'NumOfProducts': num_products,
-        'HasCrCard': has_credit_card,
-        'IsActiveMember': is_active_member,
-        'EstimatedSalary': estimated_salary
+        'Age': int(age),
+        'Tenure': int(tenure),
+        'Balance': float(balance),
+        'NumOfProducts': int(num_products),
+        'HasCrCard': int(has_credit_card),
+        'IsActiveMember': int(is_active_member),
+        'EstimatedSalary': float(estimated_salary)
     }
     
-    # One-hot encode Geography
-    geo_encoded = oneHotencoder_geo.transform([[input_data['Geography']]]).toarray()
-    geo_encoded_df = pd.DataFrame(
-        geo_encoded,
-        columns=oneHotencoder_geo.get_feature_names_out(['Geography'])
-    )
-    
-    # Create DataFrame
-    input_df = pd.DataFrame([input_data])
-    
-    # Label encode Gender
-    input_df['Gender'] = labelEncoder_gender.transform(input_df['Gender'])
-    
-    # Drop Geography and concatenate with encoded geography
-    input_df = pd.concat([input_df.drop("Geography", axis=1), geo_encoded_df], axis=1)
-    
-    # Scale the input
-    input_scaled = scaler.transform(input_df)
-    
-    # Make prediction
-    prediction = model.predict(input_scaled, verbose=0)
-    churn_probability = prediction[0][0]
-    
-    # Display results
-    st.markdown("---")
-    st.header("Prediction Results")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.metric(
-            label="Churn Probability",
-            value=f"{churn_probability:.2%}",
-            delta=None
-        )
-    
-    with col2:
-        if churn_probability > 0.5:
-            st.error("⚠️ **The customer is likely to CHURN**")
-            recommendation = "Consider retention strategies such as discounts or improved service."
-        else:
-            st.success("✅ **The customer is likely to STAY**")
-            recommendation = "Customer is satisfied. Maintain current service levels."
-        
-        st.info(recommendation)
-    
-    # Display input data summary
-    st.subheader("Input Summary")
-    st.dataframe(input_df.T, width='stretch')
+    with st.spinner("Connecting to FastAPI backend..."):
+        try:
+            response = requests.post(API_URL, json=input_data)
+            
+            if response.status_code == 200:
+                result = response.json()
+                churn_probability = result.get("churn_probability", 0.0)
+                
+                # Display results
+                st.markdown("---")
+                st.header("Prediction Results")
+                
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.metric(
+                        label="Churn Probability",
+                        value=f"{churn_probability:.2%}",
+                        delta=None
+                    )
+                
+                with col2:
+                    if churn_probability > 0.5:
+                        st.error("⚠️ **The customer is likely to CHURN**")
+                        recommendation = "Consider retention strategies such as discounts or improved service."
+                    else:
+                        st.success("✅ **The customer is likely to STAY**")
+                        recommendation = "Customer is satisfied. Maintain current service levels."
+                    
+                    st.info(recommendation)
+                
+                # Display input data summary
+                st.subheader("Input Summary")
+                import pandas as pd
+                input_df = pd.DataFrame([input_data])
+                st.dataframe(input_df.T, width='stretch')
+                
+            else:
+                st.error(f"Error from API: {response.text}")
+                
+        except requests.exceptions.ConnectionError:
+            st.error("Could not connect to the backend. Is the FastAPI server running on port 8000?")
+
